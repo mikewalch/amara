@@ -1,0 +1,8 @@
+{
+"AccumuloInstance": "instance17",
+"AccumuloPassword": "secret",
+"AccumuloVersion": "1.7.1",
+"HdfsRoot": "hdfs://localhost:10000",
+"MarathonRoot": "http://localhost:8080",
+"User": "centos",
+}

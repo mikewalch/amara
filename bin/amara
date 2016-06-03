@@ -1,0 +1,81 @@
+#!/bin/bash
+
+bin_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+amara_home=$( cd "$( dirname "$bin_dir" )" && pwd )
+impl=$bin_dir/impl
+
+rm -f $impl/main
+
+if [ ! -f $impl/main ]; then
+  hash go 2>/dev/null || { echo >&2 "Golang must be installed & go command must be on path.  Aborting."; exit 1; }
+  export GOBIN=$impl
+  go install $amara_home/src/main.go
+  if [ ! -f $impl/main ]; then
+    echo "Failed to build main.go"
+    exit 1
+  fi
+fi 
+
+config_file=$amara_home/conf/config.json
+if [ ! -f "$config_file" ]; then
+  echo "Config file '$config_file' does not exist"
+  exit 1
+fi
+
+function get_config {
+  config_cmd="$impl/main $config_file config"
+  value=`$config_cmd $1`
+  if [ $? -eq 1 ]; then
+    echo "Failed to retrieve $1 from $config_file" 
+    exit 1
+  fi
+  echo $value 
+}
+
+acc_instance=`get_config AccumuloInstance`
+acc_password=`get_config AccumuloPassword`
+acc_version=`get_config AccumuloVersion`
+marathon=`get_config MarathonRoot`
+
+acc_tarball=accumulo-$acc_version-bin.tar.gz
+acc_home=$impl/accumulo-$acc_version
+acc_conf=$acc_home/conf
+upload=$amara_home/upload
+
+if [ ! -f "$upload/$acc_tarball" ]; then
+  echo "Could not find $acc_tarball in $upload"
+  exit 1
+fi
+
+case "$1" in 
+init)
+  $impl/main $config_file destroy
+  rm -rf $acc_home
+  tar xzf $upload/$acc_tarball -C $impl
+  cp $acc_conf/examples/2GB/standalone/* $acc_conf/
+  cp $upload/accumulo-site.xml $acc_conf/
+  cp $upload/accumulo-env.sh $acc_conf/
+  hdfs dfs -rm -r /accumulo
+  $acc_home/bin/accumulo init --clear-instance-name --instance-name $acc_instance --password $acc_password
+  ;;
+start)
+  hdfs dfs -mkdir /amara
+  hdfs dfs -rm  /amara/*.sh
+  hdfs dfs -rm  /amara/*.xml
+  hdfs dfs -put $upload/$acc_tarball /amara
+  hdfs dfs -put $upload/accumulo-site.xml /amara
+  hdfs dfs -put $upload/accumulo-env.sh /amara
+  hdfs dfs -put $upload/start.sh /amara
+  $impl/main $config_file start
+  ;;
+destroy)
+  $impl/main $config_file destroy
+  ;;
+*)
+  echo -e "Usage: amara <command>\n"
+  echo -e "Possible commands:\n"
+  echo "  init    Initialize Accumulo"
+  echo "  start   Start Accumulo in Marathon"
+  echo "  destroy Destroy Accumulo in Marathon"
+  exit 1
+esac
