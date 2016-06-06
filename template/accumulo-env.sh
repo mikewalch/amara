@@ -14,11 +14,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-test -z "$HADOOP_PREFIX"         && export HADOOP_PREFIX=/path/to/hadoop
-test -z "$HADOOP_CONF_DIR"       && export HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/hadoop"
-test -z "$JAVA_HOME"             && export JAVA_HOME=/path/to/java
-test -z "$ZOOKEEPER_HOME"        && export ZOOKEEPER_HOME=/path/to/zookeeper
-test -z "$ACCUMULO_LOG_DIR"      && export ACCUMULO_LOG_DIR=$ACCUMULO_HOME/logs
+export HADOOP_PREFIX={{.HadoopPrefix}}
+export HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/hadoop"
+export JAVA_HOME={{.JavaHome}}
+export ZOOKEEPER_HOME={{.ZookeeperHome}}
+export ACCUMULO_LOG_DIR=$ACCUMULO_HOME/logs
 if [[ -f ${ACCUMULO_CONF_DIR}/accumulo.policy ]]
 then
    POLICY="-Djava.security.manager -Djava.security.policy=${ACCUMULO_CONF_DIR}/accumulo.policy"

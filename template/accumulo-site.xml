@@ -4,12 +4,12 @@
 <configuration>
   <property>
     <name>instance.volumes</name>
-    <value>hdfs://leader1:10000/accumulo</value>
+    <value>{{.HdfsRoot}}/accumulo</value>
   </property>
 
   <property>
     <name>instance.zookeeper.host</name>
-    <value>leader1,leader2,leader3</value>
+    <value>{{.ZookeeperConnect}}</value>
   </property>
 
   <property>

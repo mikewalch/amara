@@ -8,13 +8,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
 )
 
 type Config struct {
-	AccumuloVersion string
-	HdfsRoot        string
-	MarathonRoot    string
-	User            string
+	AccumuloVersion  string
+	JavaHome         string
+	HadoopPrefix     string
+	HdfsRoot         string
+	MarathonRoot     string
+	User             string
+	ZookeeperConnect string
+	ZookeeperHome    string
 }
 
 type App struct {
@@ -85,18 +90,56 @@ func destroyApp(config Config, name string) {
 	}
 }
 
+func configFail(prop string) {
+	log.Fatal(prop, " is set to empty string in config.json")
+}
+
 func getConfig(configPath string) Config {
 	f, err := os.Open(configPath)
 	if err != nil {
 		log.Fatal("open config", err)
 	}
+	defer f.Close()
 	var config Config
 	jsonParser := json.NewDecoder(f)
 	err = jsonParser.Decode(&config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	f.Close()
+	if config.HadoopPrefix == "" {
+		config.HadoopPrefix = os.Getenv("HADOOP_PREFIX")
+	}
+	if config.JavaHome == "" {
+		config.JavaHome = os.Getenv("JAVA_HOME")
+	}
+	if config.ZookeeperHome == "" {
+		config.ZookeeperHome = os.Getenv("ZOOKEEPER_HOME")
+	}
+	// validate config
+	if config.AccumuloVersion == "" {
+		configFail("AccumuloVersion")
+	}
+	if config.JavaHome == "" {
+		configFail("JavaHome")
+	}
+	if config.HadoopPrefix == "" {
+		configFail("HadoopPrefix")
+	}
+	if config.HdfsRoot == "" {
+		configFail("HdfsRoot")
+	}
+	if config.MarathonRoot == "" {
+		configFail("MarathonRoot")
+	}
+	if config.User == "" {
+		configFail("User")
+	}
+	if config.ZookeeperConnect == "" {
+		configFail("ZookeeperConnect")
+	}
+	if config.ZookeeperHome == "" {
+		configFail("ZookeeperHome")
+	}
 	return config
 }
 
@@ -105,6 +148,7 @@ func printConfigValue(configPath string, key string) {
 	if err != nil {
 		log.Fatal("open config", err)
 	}
+	defer f.Close()
 
 	var data map[string]interface{}
 	jsonParser := json.NewDecoder(f)
@@ -112,32 +156,52 @@ func printConfigValue(configPath string, key string) {
 	if err != nil {
 		log.Fatal("decode data", err)
 	}
-	f.Close()
 	fmt.Println(data[key])
 }
 
 func main() {
 
-	configPath := os.Args[1]
+	amaraHome := os.Args[1]
 	command := os.Args[2]
 
-	if command == "config" {
+	configPath := amaraHome + "/conf/config.json"
+	templateDir := amaraHome + "/template"
+	uploadDir := amaraHome + "/upload"
+
+	switch command {
+	case "config":
 		if len(os.Args) == 4 {
 			key := os.Args[3]
 			printConfigValue(configPath, key)
 			os.Exit(0)
 		}
 		log.Fatal("Missing arguments")
-	} else if command == "start" {
+	case "start":
 		config := getConfig(configPath)
 		launchApp(config, "master", 1, 0.2)
 		launchApp(config, "monitor", 1, 0.2)
 		launchApp(config, "tserver", 3, 0.5)
 		launchApp(config, "gc", 1, 0.2)
-	} else if command == "destroy" {
+	case "destroy":
 		config := getConfig(configPath)
 		for _, app := range []string{"gc", "tserver", "monitor", "master"} {
 			destroyApp(config, app)
 		}
+	case "generate":
+		config := getConfig(configPath)
+		for _, fn := range []string{"accumulo-env.sh", "accumulo-site.xml", "start.sh"} {
+			t, err := template.ParseFiles(templateDir + "/" + fn)
+			if err != nil {
+				log.Fatal("parse template", fn, err)
+			}
+			f, err := os.Create(uploadDir + "/" + fn)
+			if err != nil {
+				log.Fatal("create upload file", fn, err)
+			}
+			t.Execute(f, config)
+			f.Close()
+		}
+	default:
+		log.Fatal("Unknown command", command)
 	}
 }
