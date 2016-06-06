@@ -6,6 +6,7 @@
 "HadoopPrefix": "",
 "HdfsRoot": "hdfs://localhost:10000",
 "MarathonRoot": "http://localhost:8080",
+"NumTabletServers": 3,
 "User": "centos",
 "ZookeeperConnect": "localhost",
 "ZookeeperHome": ""

@@ -17,6 +17,7 @@ type Config struct {
 	HadoopPrefix     string
 	HdfsRoot         string
 	MarathonRoot     string
+	NumTabletServers int
 	User             string
 	ZookeeperConnect string
 	ZookeeperHome    string
@@ -90,7 +91,7 @@ func destroyApp(config Config, name string) {
 	}
 }
 
-func configFail(prop string) {
+func emptyString(prop string) {
 	log.Fatal(prop, " is set to empty string in config.json")
 }
 
@@ -117,28 +118,31 @@ func getConfig(configPath string) Config {
 	}
 	// validate config
 	if config.AccumuloVersion == "" {
-		configFail("AccumuloVersion")
+		emptyString("AccumuloVersion")
 	}
 	if config.JavaHome == "" {
-		configFail("JavaHome")
+		emptyString("JavaHome")
 	}
 	if config.HadoopPrefix == "" {
-		configFail("HadoopPrefix")
+		emptyString("HadoopPrefix")
 	}
 	if config.HdfsRoot == "" {
-		configFail("HdfsRoot")
+		emptyString("HdfsRoot")
 	}
 	if config.MarathonRoot == "" {
-		configFail("MarathonRoot")
+		emptyString("MarathonRoot")
+	}
+	if config.NumTabletServers < 1 {
+		log.Fatal("NumTabletServers must be >= 1")
 	}
 	if config.User == "" {
-		configFail("User")
+		emptyString("User")
 	}
 	if config.ZookeeperConnect == "" {
-		configFail("ZookeeperConnect")
+		emptyString("ZookeeperConnect")
 	}
 	if config.ZookeeperHome == "" {
-		configFail("ZookeeperHome")
+		emptyString("ZookeeperHome")
 	}
 	return config
 }
