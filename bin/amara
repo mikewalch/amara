@@ -22,8 +22,16 @@ if [ ! -f "$config_file" ]; then
   exit 1
 fi
 
+function run_cmd {
+  $impl/main $amara_home $1
+  if [ $? -eq 1 ]; then
+    echo "'$1' command failed" 
+    exit 1
+  fi
+}
+
 function get_config {
-  config_cmd="$impl/main $config_file config"
+  config_cmd="$impl/main $amara_home config"
   value=`$config_cmd $1`
   if [ $? -eq 1 ]; then
     echo "Failed to retrieve $1 from $config_file" 
@@ -42,17 +50,17 @@ acc_home=$impl/accumulo-$acc_version
 acc_conf=$acc_home/conf
 upload=$amara_home/upload
 
-if [ ! -f "$upload/$acc_tarball" ]; then
-  echo "Could not find $acc_tarball in $upload"
-  exit 1
-fi
-
 case "$1" in 
 init)
-  $impl/main $config_file destroy
+  run_cmd destroy
   rm -rf $acc_home
+  if [ ! -f "$upload/$acc_tarball" ]; then
+    echo "Could not find $acc_tarball in $upload"
+    exit 1
+  fi
   tar xzf $upload/$acc_tarball -C $impl
   cp $acc_conf/examples/2GB/standalone/* $acc_conf/
+  run_cmd generate
   cp $upload/accumulo-site.xml $acc_conf/
   cp $upload/accumulo-env.sh $acc_conf/
   hdfs dfs -rm -r /accumulo
@@ -62,14 +70,19 @@ start)
   hdfs dfs -mkdir /amara
   hdfs dfs -rm  /amara/*.sh
   hdfs dfs -rm  /amara/*.xml
+  if [ ! -f "$upload/$acc_tarball" ]; then
+    echo "Could not find $acc_tarball in $upload"
+    exit 1
+  fi
+  run_cmd generate
   hdfs dfs -put $upload/$acc_tarball /amara
   hdfs dfs -put $upload/accumulo-site.xml /amara
   hdfs dfs -put $upload/accumulo-env.sh /amara
   hdfs dfs -put $upload/start.sh /amara
-  $impl/main $config_file start
+  $impl/main $amara_home start
   ;;
 destroy)
-  $impl/main $config_file destroy
+  run_cmd destroy
   ;;
 *)
   echo -e "Usage: amara <command>\n"
