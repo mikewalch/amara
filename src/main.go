@@ -184,7 +184,7 @@ func main() {
 		config := getConfig(configPath)
 		launchApp(config, "master", 1, 0.2)
 		launchApp(config, "monitor", 1, 0.2)
-		launchApp(config, "tserver", 3, 0.5)
+		launchApp(config, "tserver", config.NumTabletServers, 0.5)
 		launchApp(config, "gc", 1, 0.2)
 	case "destroy":
 		config := getConfig(configPath)
