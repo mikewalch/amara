@@ -58,6 +58,16 @@
   </property>
 
   <property>
+    <name>tserver.port.client</name>
+    <value>0</value>
+  </property>
+
+  <property>
+    <name>replication.receipt.service.port</name>
+    <value>0</value>
+  </property>
+
+  <property>
     <name>general.rpc.timeout</name>
     <value>240s</value>
   </property>

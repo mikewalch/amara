@@ -41,12 +41,10 @@ func createApp(config Config, name string, instances int, cpus float32) App {
 	uris[1] = hdfsAmara + "/accumulo-site.xml"
 	uris[2] = hdfsAmara + "/accumulo-env.sh"
 	uris[3] = hdfsAmara + "/start.sh"
-	fmt.Println(uris)
 	constraints := [][]string{}
 	if name == "tserver" {
-		c := []string{"hostname", "UNIQUE"}
+		c := []string{"hostname", "GROUP_BY"}
 		constraints = append(constraints, c)
-		fmt.Println(constraints)
 	}
 	app := App{"accumulo-" + name, instances, cmd, constraints, cpus, uris[0:4], config.User}
 	return app
